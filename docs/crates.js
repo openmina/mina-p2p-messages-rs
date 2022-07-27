@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["mina_p2p_messages"];
