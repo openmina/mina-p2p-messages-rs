@@ -1,9 +1,15 @@
-use std::{cmp::Ordering, fs::File, io::{BufReader, BufRead}};
+use std::{
+    cmp::Ordering,
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
-use anyhow::{format_err, Result};
+use anyhow::{bail, format_err, Result};
 use bin_prot_rs::{
-    shape::{Expression, Visitor},
-    xref::NamedShape,
+    doc::Doc,
+    shape::Expression,
+    visit::{Visiting, Visitor},
+    xref::{NamedShape, XRef},
 };
 use clap::{ArgEnum, Parser, Subcommand};
 
@@ -23,6 +29,12 @@ enum Commands {
         depth: Option<usize>,
         #[clap(arg_enum, short, long)]
         enable: Vec<ExprKind>,
+    },
+    Doc {
+        #[clap(short, long)]
+        _type: Vec<String>,
+        #[clap(short, long)]
+        all: bool,
     },
 }
 
@@ -93,7 +105,9 @@ fn main() -> Result<()> {
                 }
                 buf = String::new();
             }
+            Ok(())
         }
+        Commands::Doc { _type, all } => doc(&mut read, _type, all),
     }
 
     //    let mut gen = Generator::new(&types)?;
@@ -101,6 +115,34 @@ fn main() -> Result<()> {
     //    let ts = gen.generate("Transaction_snark.Pending_coinbase_stack_state.Stable.V1.t");
     //    println!("{}", format_tokens(ts));
     //
+}
+
+fn doc(read: &mut impl BufRead, _types: Vec<String>, all: bool) -> Result<()> {
+    if _types.is_empty() != all {
+        bail!("should be either --type or --all");
+    }
+
+    let mut mina_types = Vec::new();
+    let mut buf = String::new();
+    while read.read_line(&mut buf)? != 0 {
+        let ty = Type::from_mina_shape(&buf)?;
+        mina_types.push(ty);
+        buf.clear();
+    }
+
+    let xref = XRef::new(&mina_types)?;
+    let git_base =
+        "https://github.com/MinaProtocol/mina/blob/b14f0da9ebae87acd8764388ab4681ca10f07c89/";
+    let mut stdout = std::io::stdout();
+    if all {
+        let mut doc = Doc::new(&xref, git_base.to_string(), &mut stdout);
+        doc.generate_all()?;
+    } else {
+        for _type in &_types {
+            let mut doc = Doc::new(&xref, git_base.to_string(), &mut stdout);
+            doc.generate(_type)?;
+        }
+    }
 
     Ok(())
 }
