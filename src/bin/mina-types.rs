@@ -7,7 +7,7 @@ use std::{
 use anyhow::{bail, format_err, Result};
 use bin_prot_rs::{
     doc::Doc,
-    shape::Expression,
+    shape::{Expression, self},
     visit::{Visiting, Visitor},
     xref::{NamedShape, XRef},
 };
@@ -17,6 +17,9 @@ use clap::{ArgEnum, Parser, Subcommand};
 struct Cli {
     #[clap(value_parser)]
     file: String,
+
+    #[clap(short, long)]
+    no_eval: bool,
 
     #[clap(subcommand)]
     command: Commands,
@@ -65,8 +68,9 @@ impl ExprKind {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     let file = cli.file;
-    let mut read =
+    let mut r =
         BufReader::new(File::open(&file).map_err(|err| format_err!("cannot open {file}: {err}"))?);
+    let shapes = read(&mut r, !cli.no_eval)?;
     match cli.command {
         Commands::Filter { enable, depth } => {
             struct Filter<'a> {
@@ -90,24 +94,21 @@ fn main() -> Result<()> {
                 }
             }
 
-            let mut buf = String::new();
-            while read.read_line(&mut buf)? != 0 {
-                let ty = Type::from_mina_shape(&buf)?;
+            for Type { shape, source, .. } in shapes {
                 let mut filter = Filter {
                     matches: false,
                     curr_depth: 0,
                     depth: depth.unwrap_or(1),
                     enable: &enable,
                 };
-                ty.shape.visit(&mut filter);
+                shape.visit(&mut filter);
                 if filter.matches {
-                    print!("{buf}");
+                    print!("{source}");
                 }
-                buf = String::new();
             }
             Ok(())
         }
-        Commands::Doc { _type, all } => doc(&mut read, _type, all),
+        Commands::Doc { _type, all } => doc(shapes, _type, all),
     }
 
     //    let mut gen = Generator::new(&types)?;
@@ -117,20 +118,23 @@ fn main() -> Result<()> {
     //
 }
 
-fn doc(read: &mut impl BufRead, _types: Vec<String>, all: bool) -> Result<()> {
+fn read(read: &mut impl BufRead, eval: bool) -> Result<Vec<Type>> {
+    let mut mina_types = Vec::new();
+    let mut buf = String::new();
+    while read.read_line(&mut buf)? != 0 {
+        let source = std::mem::take(&mut buf);
+        let ty = Type::from_mina_shape(source, eval)?;
+        mina_types.push(ty);
+    }
+    Ok(mina_types)
+}
+
+fn doc(shapes: Vec<Type>, _types: Vec<String>, all: bool) -> Result<()> {
     if _types.is_empty() != all {
         bail!("should be either --type or --all");
     }
 
-    let mut mina_types = Vec::new();
-    let mut buf = String::new();
-    while read.read_line(&mut buf)? != 0 {
-        let ty = Type::from_mina_shape(&buf)?;
-        mina_types.push(ty);
-        buf.clear();
-    }
-
-    let xref = XRef::new(&mina_types)?;
+    let xref = XRef::new(&shapes)?;
     let git_base =
         "https://github.com/MinaProtocol/mina/blob/b14f0da9ebae87acd8764388ab4681ca10f07c89/";
     let mut stdout = std::io::stdout();
@@ -150,6 +154,7 @@ fn doc(read: &mut impl BufRead, _types: Vec<String>, all: bool) -> Result<()> {
 struct Type {
     name: String,
     shape: Expression,
+    source: String,
 }
 
 impl NamedShape for Type {
@@ -163,8 +168,8 @@ impl NamedShape for Type {
 }
 
 impl Type {
-    fn from_mina_shape(line: &str) -> Result<Self, anyhow::Error> {
-        let mut parts = line.splitn(2, ", ");
+    fn from_mina_shape(source: String, eval: bool) -> Result<Self, anyhow::Error> {
+        let mut parts = source.splitn(2, ", ");
         let ty = parts
             .next()
             .ok_or_else(|| format_err!("missing type description"))?;
@@ -179,7 +184,8 @@ impl Type {
             .map_err(|e| format_err!("error while reading {name}: {e}"))?;
         Ok(Self {
             name: name.to_string(),
-            shape,
+            shape: if eval { shape::eval(&shape)? } else { shape },
+            source,
         })
     }
 }
