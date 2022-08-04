@@ -1,5 +1,5 @@
 [package]
-name = "mina-bin-prot"
+name = "mina-gossip-rs"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,5 +7,8 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.58"
-bin-prot-rs = { version = "0.1.0", path = "../bin-prot-rs" }
+bin-prot-rs = { version = "0.1.0", git = "https://github.com/name-placeholder/bin-prot-rs" }
 clap = { version = "3.2.15", features = ["derive"] }
+rust-format = { version = "0.3.4", features = ["token_stream", "post_process"] }
+serde = "1.0.142"
+toml = "0.5.9"

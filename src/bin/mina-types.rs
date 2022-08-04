@@ -1,17 +1,18 @@
 use std::{
     cmp::Ordering,
     fs::File,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Read, Write},
 };
 
 use anyhow::{bail, format_err, Result};
 use bin_prot_rs::{
     doc::Doc,
-    shape::{Expression, self},
+    shape::Expression,
     visit::{Visiting, Visitor},
     xref::{NamedShape, XRef},
 };
 use clap::{ArgEnum, Parser, Subcommand};
+use rust_format::{Formatter, RustFmt};
 
 #[derive(Parser)]
 struct Cli {
@@ -38,6 +39,16 @@ enum Commands {
         _type: Vec<String>,
         #[clap(short, long)]
         all: bool,
+    },
+    Gen {
+        #[clap(short, long)]
+        _type: Vec<String>,
+        #[clap(short, long)]
+        all: bool,
+        #[clap(short, long)]
+        config: Option<String>,
+        #[clap(short, long)]
+        out: Option<String>,
     },
 }
 
@@ -70,7 +81,9 @@ fn main() -> Result<()> {
     let file = cli.file;
     let mut r =
         BufReader::new(File::open(&file).map_err(|err| format_err!("cannot open {file}: {err}"))?);
-    let shapes = read(&mut r, !cli.no_eval)?;
+    let shapes = read(
+        &mut r, false, // !cli.no_eval
+    )?;
     match cli.command {
         Commands::Filter { enable, depth } => {
             struct Filter<'a> {
@@ -109,6 +122,12 @@ fn main() -> Result<()> {
             Ok(())
         }
         Commands::Doc { _type, all } => doc(shapes, _type, all),
+        Commands::Gen {
+            _type,
+            all,
+            config,
+            out,
+        } => gen(shapes, _type, all, config, out),
     }
 
     //    let mut gen = Generator::new(&types)?;
@@ -138,6 +157,7 @@ fn doc(shapes: Vec<Type>, _types: Vec<String>, all: bool) -> Result<()> {
     let git_base =
         "https://github.com/MinaProtocol/mina/blob/b14f0da9ebae87acd8764388ab4681ca10f07c89/";
     let mut stdout = std::io::stdout();
+
     if all {
         let mut doc = Doc::new(&xref, git_base.to_string(), &mut stdout);
         doc.generate_all()?;
@@ -146,6 +166,53 @@ fn doc(shapes: Vec<Type>, _types: Vec<String>, all: bool) -> Result<()> {
             let mut doc = Doc::new(&xref, git_base.to_string(), &mut stdout);
             doc.generate(_type)?;
         }
+    }
+
+    Ok(())
+}
+
+fn gen(
+    shapes: Vec<Type>,
+    _types: Vec<String>,
+    all: bool,
+    config: Option<String>,
+    out: Option<String>,
+) -> Result<()> {
+    if _types.is_empty() != all {
+        bail!("should be either --type or --all");
+    }
+
+    let xref = XRef::new(&shapes)?;
+    let git_base =
+        "https://github.com/MinaProtocol/mina/blob/b14f0da9ebae87acd8764388ab4681ca10f07c89/";
+
+    let config = if let Some(config) = config {
+        let mut buf = Vec::new();
+        File::open(config)?.read_to_end(&mut buf)?;
+        toml::from_slice(&buf)?
+    } else {
+        bin_prot_rs::gen::ConfigBuilder::default()
+            .generate_comments(true)
+            .blank_lines(true)
+            .git_prefix(git_base)
+            .build()?
+    };
+    let mut gen = bin_prot_rs::gen::Generator::new(&xref, config);
+    let ts = if all {
+        gen.generate_types(xref.names())
+    } else {
+        gen.generate_types(&_types)
+    };
+    let config = rust_format::Config::new_str()
+        .post_proc(rust_format::PostProcess::ReplaceMarkersAndDocBlocks);
+
+    let res = RustFmt::from_config(config)
+        .format_tokens(ts.into())
+        .unwrap();
+    if let Some(out) = out {
+        File::create(out)?.write_all(res.as_bytes())?;
+    } else {
+        std::io::stdout().write_all(res.as_bytes())?;
     }
 
     Ok(())
@@ -184,7 +251,11 @@ impl Type {
             .map_err(|e| format_err!("error while reading {name}: {e}"))?;
         Ok(Self {
             name: name.to_string(),
-            shape: if eval { shape::eval(&shape)? } else { shape },
+            shape: if eval {
+                bin_prot_rs::eval::eval(&shape)?
+            } else {
+                shape
+            },
             source,
         })
     }
