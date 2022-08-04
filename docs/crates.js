@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["mina_gossip_rs","mina_types"];
