@@ -1,5 +1,6 @@
 generate_comments = true
 blank_lines = true
+git_prefix = "https://github.com/MinaProtocol/mina/blob/b14f0da9ebae87acd8764388ab4681ca10f07c89/"
 preamble = '#[doc = " Naive implementation for big integer."] pub type BigInt = [u8; 32]; _blank_!();'
 
 [base_types.float]
