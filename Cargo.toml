@@ -16,3 +16,6 @@ thiserror = "1.0.32"
 [target.'cfg(fuzzing)'.dev-dependencies]
 #[dev-dependencies]
 fuzzcheck = "0.12.1"
+
+[dev-dependencies]
+ocaml-interop = "0.8.8"
