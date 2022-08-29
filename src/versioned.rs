@@ -26,7 +26,7 @@ where
         if serializer.is_human_readable() {
             self.0.serialize(serializer)
         } else {
-            let mut s = serializer.serialize_struct("MakeVersioned", 2)?;
+            let mut s = serializer.serialize_struct("Versioned", 2)?;
             s.serialize_field("version", &V)?;
             s.serialize_field("t", &self.0)?;
             s.end()
@@ -76,7 +76,7 @@ where
         const FIELDS: &'static [&'static str] = &["version", "t"];
         deserializer
             .deserialize_struct(
-                "MakeVersioned",
+                "Versioned",
                 FIELDS,
                 FieldsVisitor::<T, V>(Default::default()),
             )
