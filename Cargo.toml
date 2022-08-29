@@ -9,15 +9,14 @@ edition = "2021"
 serde = { version = "1.0.142", features = ["derive"] }
 serde_json = "1.0.83"
 hex = "0.4.3"
-binprot = { version = "0.1.7" }
-binprot_derive = { version = "0.1.7" }
+binprot = { git = "https://github.com/name-placeholder/binprot-rs", rev = "7a06fb5a46ec1cf5cb661894eb4ee4c58b10ad3b" }
+binprot_derive = { git = "https://github.com/name-placeholder/binprot-rs", rev = "7a06fb5a46ec1cf5cb661894eb4ee4c58b10ad3b" }
 thiserror = "1.0.32"
 
-[target.'cfg(fuzzing)'.dev-dependencies]
-#[dev-dependencies]
-fuzzcheck = "0.12.1"
-
+#[target.'cfg(fuzzing)'.dev-dependencies]
 [dev-dependencies]
-ocaml-interop = "0.8.8"
-mina-sys = { path = "./mina-sys" }
+fuzzcheck = "0.12.1"
+#ocaml-interop = "0.8.8"
+#mina-sys = { path = "./mina-sys" }
 #mina-sys = { path = "./mina-sys", features = [ "static" ] }
+
