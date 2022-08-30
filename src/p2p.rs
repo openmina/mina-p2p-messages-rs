@@ -25,7 +25,6 @@ pub type NetworkPoolSnarkPoolDiffVersionedStable =
 /// **Location**: [src/lib/mina_base/account.ml:188:4](https://github.com/name-placeholder/mina/blob/da4c511501876adff40f3e1281392fedd121d607/src/lib/mina_base/account.ml#L188)
 pub type MinaBaseAccountStable = crate::versioned::Versioned<MinaBaseAccountStableV1, 1i32>;
 
-
 /// Location: [src/lib/mina_state/protocol_state.ml:16:6](https://github.com/name-placeholder/mina/blob/da4c511501876adff40f3e1281392fedd121d607/src/lib/mina_state/protocol_state.ml#L16)
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, BinProtRead, BinProtWrite)]
 pub struct MinaStateProtocolStatePolyStableV1<StateHash, Body> {
@@ -41,15 +40,14 @@ pub type MinaStateProtocolStatePolyStable<StateHash, Body> =
 
 /// Location: [src/lib/data_hash_lib/state_hash.ml:43:6](https://github.com/name-placeholder/mina/blob/da4c511501876adff40f3e1281392fedd121d607/src/lib/data_hash_lib/state_hash.ml#L43)
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, BinProtRead, BinProtWrite)]
-pub struct MinaStateProtocolStatePolyStableArg0V1Poly(pub crate::bigint::BigInt);
+pub struct StateHashStableV1Poly(pub crate::bigint::BigInt);
 
 /// Location: [src/lib/data_hash_lib/state_hash.ml:42:4](https://github.com/name-placeholder/mina/blob/da4c511501876adff40f3e1281392fedd121d607/src/lib/data_hash_lib/state_hash.ml#L42)
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, BinProtRead, BinProtWrite)]
-pub struct MinaStateProtocolStatePolyStableArg0V1(pub MinaStateProtocolStatePolyStableArg0V1Poly);
+pub struct StateHashStableV1(pub StateHashStableV1Poly);
 
 /// Location: [src/lib/data_hash_lib/state_hash.ml:42:4](https://github.com/name-placeholder/mina/blob/da4c511501876adff40f3e1281392fedd121d607/src/lib/data_hash_lib/state_hash.ml#L42)
-pub type MinaStateProtocolStatePolyStableArg0 =
-    crate::versioned::Versioned<MinaStateProtocolStatePolyStableArg0V1, 1i32>;
+pub type StateHashStable = crate::versioned::Versioned<StateHashStableV1, 1i32>;
 
 /// Location: [src/lib/mina_state/protocol_state.ml:38:8](https://github.com/name-placeholder/mina/blob/da4c511501876adff40f3e1281392fedd121d607/src/lib/mina_state/protocol_state.ml#L38)
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, BinProtRead, BinProtWrite)]
@@ -467,8 +465,8 @@ pub struct ConsensusProofOfStakeDataEpochDataStakingValueVersionedValueStableV1(
     pub  MinaBaseEpochDataPolyStable<
         MinaBaseEpochLedgerValueStable,
         MinaBaseEpochDataPolyStableArg1,
-        MinaStateProtocolStatePolyStableArg0,
-        MinaStateProtocolStatePolyStableArg0,
+        StateHashStable,
+        StateHashStable,
         ConsensusProofOfStakeDataConsensusStatePolyStableArg0,
     >,
 );
@@ -488,8 +486,8 @@ pub struct ConsensusProofOfStakeDataEpochDataNextValueVersionedValueStableV1(
     pub  MinaBaseEpochDataPolyStable<
         MinaBaseEpochLedgerValueStable,
         MinaBaseEpochDataPolyStableArg1,
-        MinaStateProtocolStatePolyStableArg0,
-        MinaStateProtocolStatePolyStableArg0,
+        StateHashStable,
+        StateHashStable,
         ConsensusProofOfStakeDataConsensusStatePolyStableArg0,
     >,
 );
@@ -593,7 +591,7 @@ pub type MinaBaseProtocolConstantsCheckedValueStable =
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, BinProtRead, BinProtWrite)]
 pub struct MinaStateProtocolStateBodyValueStableV1(
     pub  MinaStateProtocolStateBodyPolyStable<
-        MinaStateProtocolStatePolyStableArg0,
+        StateHashStable,
         MinaStateBlockchainStateValueStable,
         ConsensusProofOfStakeDataConsensusStateValueStable,
         MinaBaseProtocolConstantsCheckedValueStable,
@@ -609,10 +607,7 @@ pub type MinaStateProtocolStateBodyValueStable =
 /// Location: [src/lib/mina_state/protocol_state.ml:177:6](https://github.com/name-placeholder/mina/blob/da4c511501876adff40f3e1281392fedd121d607/src/lib/mina_state/protocol_state.ml#L177)
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, BinProtRead, BinProtWrite)]
 pub struct MinaStateProtocolStateValueStableV1(
-    pub  MinaStateProtocolStatePolyStable<
-        MinaStateProtocolStatePolyStableArg0,
-        MinaStateProtocolStateBodyValueStable,
-    >,
+    pub MinaStateProtocolStatePolyStable<StateHashStable, MinaStateProtocolStateBodyValueStable>,
 );
 
 /// **Origin**: `Mina_state__Protocol_state.Value.Stable.V1.t`
@@ -2676,8 +2671,8 @@ pub struct MinaBaseSnappPredicateProtocolStateEpochDataStableV1(
             MinaBaseSnappPredicateNumericStable<CurrencyAmountMakeStrStable>,
         >,
         MinaBaseSnappBasicOrIgnoreStable<MinaBaseEpochDataPolyStableArg1>,
-        MinaBaseSnappBasicOrIgnoreStable<MinaStateProtocolStatePolyStableArg0>,
-        MinaBaseSnappBasicOrIgnoreStable<MinaStateProtocolStatePolyStableArg0>,
+        MinaBaseSnappBasicOrIgnoreStable<StateHashStable>,
+        MinaBaseSnappBasicOrIgnoreStable<StateHashStable>,
         MinaBaseSnappPredicateNumericStable<ConsensusProofOfStakeDataConsensusStatePolyStableArg0>,
     >,
 );
@@ -3145,7 +3140,7 @@ pub struct MinaBlockExternalTransitionRawVersionedStableV1 {
     pub protocol_state_proof: MinaBaseProofStable,
     pub staged_ledger_diff: StagedLedgerDiffStable,
     pub delta_transition_chain_proof: (
-        MinaStateProtocolStatePolyStableArg0,
+        StateHashStable,
         Vec<MinaBlockExternalTransitionRawVersionedStableV1DeltaTransitionChainProofArg0>,
     ),
     pub current_protocol_version: ProtocolVersionStable,
@@ -3381,7 +3376,7 @@ pub struct MinaBaseAccountBinableArgStableV1(
         MinaNumbersNatMake32Stable,
         MinaBaseSnappBasicOrIgnoreStableArg0,
         Option<ConsensusProofOfStakeDataConsensusStatePolyStableArg8>,
-        MinaStateProtocolStatePolyStableArg0,
+        StateHashStable,
         MinaBaseAccountTimingStable,
         MinaBasePermissionsStable,
         Option<MinaBaseSnappAccountStable>,

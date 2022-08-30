@@ -3,10 +3,37 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq)]
 pub struct BigInt([u8; 32]);
 
+impl BigInt {
+    #[cfg(feature = "hashing")]
+    pub fn to_fp(&self) -> Result<mina_hasher::Fp, o1_utils::field_helpers::FieldHelpersError> {
+        use o1_utils::FieldHelpers;
+        mina_hasher::Fp::from_bytes(self.0.as_ref())
+    }
+
+    pub fn iter_bytes<'a>(&'a self) -> impl 'a + DoubleEndedIterator<Item = u8> {
+        self.0.iter().cloned()
+    }
+}
+
+impl AsRef<[u8]> for BigInt {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+#[cfg(feature = "hashing")]
+impl From<mina_hasher::Fp> for BigInt {
+    fn from(field: mina_hasher::Fp) -> Self {
+        use o1_utils::FieldHelpers;
+        Self(field.to_bytes().try_into().unwrap())
+    }
+}
+
 impl binprot::BinProtRead for BigInt {
     fn binprot_read<R: std::io::Read + ?Sized>(r: &mut R) -> Result<Self, binprot::Error>
     where
-        Self: Sized {
+        Self: Sized,
+    {
         let mut buf = [0; 32];
         r.read_exact(&mut buf)?;
         Ok(Self(buf))
@@ -71,13 +98,27 @@ impl<'de> Deserialize<'de> for BigInt {
 
                 fn visit_borrowed_bytes<E>(self, _v: &'de [u8]) -> Result<Self::Value, E>
                 where
-                    E: serde::de::Error, {
+                    E: serde::de::Error,
+                {
                     todo!()
                 }
-
             }
             deserializer.deserialize_bytes(V).map(Self)
         }
+    }
+}
+
+#[cfg(feature = "hashing")]
+impl mina_hasher::Hashable for BigInt {
+    type D = ();
+
+    fn to_roinput(&self) -> mina_hasher::ROInput {
+        mina_hasher::ROInput::new()
+            .append_field(self.to_fp().expect("Failed to convert Hash into Fp"))
+    }
+
+    fn domain_string(_: Self::D) -> Option<String> {
+        None
     }
 }
 

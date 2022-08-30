@@ -12,3 +12,11 @@ hex = "0.4.3"
 binprot = { version = "0.1.7" }
 binprot_derive = { version = "0.1.7" }
 thiserror = "1.0.32"
+bs58 = {version = "0.4", features = ["check"]}
+sha2 = { version = "0.10.2", optional = true }
+
+mina-hasher = { git = "https://github.com/o1-labs/proof-systems", optional = true }
+o1-utils = { git = "https://github.com/o1-labs/proof-systems", optional = true }
+
+[features]
+hashing = ["mina-hasher", "o1-utils", "sha2"]
