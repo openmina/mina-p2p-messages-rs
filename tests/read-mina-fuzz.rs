@@ -13,9 +13,6 @@ use std::{
 use binprot::BinProtRead;
 use fuzzcheck::builder::{FuzzTestFunction, ReturnBool};
 
-const CMD: &str =
-    "/home/alexander/mina/git/mina/_build/default/src/lib/gossip_net/decoder/decoder.exe";
-
 #[derive(Debug)]
 enum Error {
     Leftovers,
@@ -133,14 +130,30 @@ fn mina_decoder_ipc(
 
 #[test]
 fn gossip_net_message() {
-    let mut mina_decoder = Command::new(CMD)
+    let (bytes_tx, bytes_rx) = channel::<Vec<u8>>();
+    let (res_tx, res_rx) = channel();
+
+    let mut mina_decoder = match std::env::var("MINA_DECODER") {
+        Ok(s) => match s.split_once(':') {
+            Some(("exec", path)) => Command::new(path),
+            Some(("docker", image)) => {
+                let mut cmd = Command::new("docker");
+                cmd.args(["run", "--rm", "--interactive", image]);
+                cmd
+            }
+            Some((prefix, _)) => panic!("Unknown target kind: {prefix}"),
+            None => Command::new(s),
+        },
+        Err(_) => panic!("`MINA_DECODER` is node defined. Should be either `exec:<path>` or `docker:<image>`"),
+    };
+
+
+    let mut mina_decoder = mina_decoder
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
         .expect("failed to launch mina decoder process");
 
-    let (bytes_tx, bytes_rx) = channel::<Vec<u8>>();
-    let (res_tx, res_rx) = channel();
     let mina_input = mina_decoder
         .stdin
         .take()
@@ -151,18 +164,25 @@ fn gossip_net_message() {
         .expect("failed to grab mina decoder stdout");
 
     std::thread::spawn(move || mina_decoder_ipc(mina_input, mina_output, bytes_rx, res_tx));
+    std::thread::spawn(move || {
+        match mina_decoder.wait() {
+            Ok(s) => if !s.success() {
+                panic!("Mina decoder returned non zero status `{}`", s.code().unwrap());
+            }
+            Err(e) => panic!("Error running mina decoder: {e}"),
+        }
+    });
 
-    let try_decode: MinaFuzzTestFunction<
-        mina_p2p_messages::GossipNetMessage,
-    > = MinaFuzzTestFunction {
-        bytes_tx,
-        res_rx,
-        _phantom_data: Default::default(),
-    };
+    let try_decode: MinaFuzzTestFunction<mina_p2p_messages::GossipNetMessage> =
+        MinaFuzzTestFunction {
+            bytes_tx,
+            res_rx,
+            _phantom_data: Default::default(),
+        };
 
     let result = fuzzcheck::fuzz_test(try_decode)
         .default_options()
-        .stop_after_first_test_failure(false)
+        .stop_after_first_test_failure(true)
         .launch();
     assert!(!result.found_test_failure);
 }

@@ -13,8 +13,8 @@ binprot = { git = "https://github.com/name-placeholder/binprot-rs", rev = "7a06f
 binprot_derive = { git = "https://github.com/name-placeholder/binprot-rs", rev = "7a06fb5a46ec1cf5cb661894eb4ee4c58b10ad3b" }
 thiserror = "1.0.32"
 
-#[target.'cfg(fuzzing)'.dev-dependencies]
-[dev-dependencies]
+[target.'cfg(fuzzing)'.dev-dependencies]
+#[dev-dependencies]
 fuzzcheck = "0.12.1"
 #ocaml-interop = "0.8.8"
 #mina-sys = { path = "./mina-sys" }
