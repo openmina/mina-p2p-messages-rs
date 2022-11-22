@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::{DataHashLibStateHashStableV1, StateHash};
+use super::StateHash;
 
 pub type StateHashStable = StateHash;
 
