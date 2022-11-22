@@ -98,6 +98,14 @@ impl<T, U, const V: u8> From<T> for AsBase58Check<T, U, V> {
     }
 }
 
+impl<T, U, const V: u8> std::ops::Deref for AsBase58Check<T, U, V> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl<T, U, const V: u8> AsBase58Check<T, U, V> {
     pub fn into_inner(self) -> T {
         self.0
