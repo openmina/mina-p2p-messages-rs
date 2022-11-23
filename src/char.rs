@@ -2,7 +2,21 @@ use binprot::byteorder::{ReadBytesExt, WriteBytesExt};
 use serde::{de::Visitor, Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Char(u8);
+pub struct Char(pub u8);
+
+impl std::ops::Deref for Char {
+    type Target = u8;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Char {
+    pub fn as_u8(&self) -> u8 {
+        self.0
+    }
+}
 
 impl Serialize for Char {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
