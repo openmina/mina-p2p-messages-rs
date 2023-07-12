@@ -676,7 +676,9 @@ pub struct PicklesProofProofsVerifiedMaxStableV2 {
 /// Gid: `544`
 /// Location: [src/lib/non_zero_curve_point/compressed_poly.ml:13:6](https://github.com/MinaProtocol/mina/blob/bfd1009/src/lib/non_zero_curve_point/compressed_poly.ml#L13)
 /// Args: crate :: bigint :: BigInt , bool
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, BinProtRead, BinProtWrite)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, BinProtRead, BinProtWrite,
+)]
 pub struct NonZeroCurvePointUncompressedStableV1 {
     pub x: crate::bigint::BigInt,
     pub is_odd: bool,
@@ -702,7 +704,18 @@ pub struct UnsignedExtendedUInt64Int64ForVersionTagsStableV1(pub crate::number::
 /// Gid: `119`
 /// Location: [src/int32.ml:6:6](https://github.com/MinaProtocol/mina/blob/bfd1009/src/int32.ml#L6)
 #[derive(
-    Clone, Debug, PartialEq, Serialize, Deserialize, BinProtRead, BinProtWrite, Deref, Default,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Serialize,
+    Deserialize,
+    BinProtRead,
+    BinProtWrite,
+    Deref,
+    Default,
 )]
 pub struct UnsignedExtendedUInt32StableV1(pub crate::number::Int32);
 
@@ -788,7 +801,19 @@ pub struct CurrencyBalanceStableV1(pub CurrencyAmountStableV1);
 ///
 /// Gid: `637`
 /// Location: [src/lib/data_hash_lib/state_hash.ml:44:4](https://github.com/MinaProtocol/mina/blob/bfd1009/src/lib/data_hash_lib/state_hash.ml#L44)
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, BinProtRead, BinProtWrite, Deref)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Serialize,
+    Deserialize,
+    BinProtRead,
+    BinProtWrite,
+    Deref,
+)]
 pub struct DataHashLibStateHashStableV1(pub crate::bigint::BigInt);
 
 /// Derived name: `Mina_base__Sparse_ledger_base.Stable.V2.tree`
@@ -914,7 +939,19 @@ pub struct MinaBasePaymentPayloadStableV2 {
 ///
 /// Gid: `689`
 /// Location: [src/lib/mina_base/ledger_hash0.ml:17:4](https://github.com/MinaProtocol/mina/blob/bfd1009/src/lib/mina_base/ledger_hash0.ml#L17)
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, BinProtRead, BinProtWrite, Deref)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Serialize,
+    Deserialize,
+    BinProtRead,
+    BinProtWrite,
+    Deref,
+)]
 pub struct MinaBaseLedgerHash0StableV1(pub crate::bigint::BigInt);
 
 /// **OCaml name**: `Mina_base__Permissions.Auth_required.Stable.V2`
