@@ -5,7 +5,7 @@ use binprot::{BinProtRead, BinProtWrite};
 use binprot_derive::{BinProtRead, BinProtWrite};
 use serde::{Deserialize, Serialize};
 
-use crate::versioned::Ver;
+pub use crate::versioned::Ver;
 
 pub type Tag = super::string::CharString;
 pub type QueryID = i64;
@@ -71,13 +71,9 @@ where
     where
         Self: Sized,
     {
-        let _size = binprot::Nat0::binprot_read(r)?.0;
-        // Trait function requires r to be ?Sized, so we cannot use `take`
-        // use std::io;
-        // let mut r = r.take(size);
-        // let v = T::binprot_read(&mut r)?;
-        // io::copy(&mut r, &mut io::sink())?;
-        let v = T::binprot_read(r)?;
+        let size = binprot::Nat0::binprot_read(r)?.0;
+        let mut take = r.take(size);
+        let v = T::binprot_read(&mut take)?;
         Ok(v.into())
     }
 }
@@ -152,6 +148,12 @@ pub struct Query<T> {
     pub data: QueryPayload<T>,
 }
 
+impl<T> Query<T> {
+    pub fn split(self) -> (Tag, Ver, QueryID, T) {
+        (self.tag, self.version, self.id, self.data.0)
+    }
+}
+
 /// Type used to encode response payload.
 ///
 /// Response can be either successfull, consisting of the result value prepended
@@ -174,6 +176,27 @@ pub type ResponsePayload<T> = RpcResult<NeedsLength<T>, Error>;
 pub struct Response<T> {
     pub id: QueryID,
     pub data: ResponsePayload<T>,
+}
+
+impl<T> Response<T> {
+    pub fn with_data(id: QueryID, data: T) -> Self {
+        Response {
+            id,
+            data: Ok(data.into()).into(),
+        }
+    }
+    pub fn with_err(id: QueryID, err: Error) -> Self {
+        Response {
+            id,
+            data: Err(err).into(),
+        }
+    }
+    pub fn with_result(id: QueryID, result: Result<T, Error>) -> Self {
+        Response {
+            id,
+            data: result.map(NeedsLength::from).into(),
+        }
+    }
 }
 
 /// RPC response in the form used by the Mina Network Debugger, with prepended
@@ -208,7 +231,17 @@ impl<T> From<DebuggerResponse<T>> for Response<T> {
 ///   type nat0_t = Nat0.t needs_length [@@deriving bin_read, bin_write]
 /// end
 /// ```
-#[derive(Clone, Debug, Serialize, Deserialize, BinProtRead, BinProtWrite, PartialEq, Eq)]
+#[derive(
+    Clone,
+    Debug,
+    Serialize,
+    Deserialize,
+    BinProtRead,
+    BinProtWrite,
+    PartialEq,
+    Eq,
+    derive_more::From,
+)]
 pub enum Message<T> {
     Heartbeat,
     Query(Query<T>),
