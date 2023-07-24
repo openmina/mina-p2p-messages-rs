@@ -25,6 +25,8 @@ mina-poseidon = {git = "https://github.com/o1-labs/proof-systems", rev = "373a29
 o1-utils = {git = "https://github.com/o1-labs/proof-systems", rev = "373a294cf87f94d1bb518a248fbf71364aa73526", optional = true }
 
 ark-ff = { version = "0.3.0", features = [ "parallel", "asm" ], optional = true }
+tokio = { version = "1", features = ["io-util", "macros", "rt"], optional = true }
+async-trait = { version = "0.1.72", optional = true }
 
 [target.'cfg(fuzzing)'.dev-dependencies]
 fuzzcheck = "0.12.1"
@@ -41,6 +43,7 @@ time = { version = "0.3.17", features = ["formatting"] }
 
 [features]
 hashing = ["mina-hasher", "mina-curves", "mina-signer", "mina-poseidon", "o1-utils", "sha2", "blake2", "ark-ff"]
+async-rpc = ["tokio", "async-trait"]
 
 [target.wasm32-unknown-unknown.dev-dependencies]
 web-sys = { version = "0.3.60", features = ["console"] }

@@ -1,5 +1,5 @@
 ///! Partial implementation of Janestreet `core_rpc_kernel`.
-use std::io::Read;
+use std::io::{self, Read};
 
 use binprot::{BinProtRead, BinProtWrite};
 use binprot_derive::{BinProtRead, BinProtWrite};
@@ -7,9 +7,15 @@ use serde::{Deserialize, Serialize};
 
 pub use crate::versioned::Ver;
 
+//#[cfg(feature = "tokio")]
+pub mod async_rpc;
+
 pub type Tag = super::string::CharString;
 pub type QueryID = i64;
 pub type Sexp = (); // TODO
+
+/// See https://github.com/janestreet/protocol_version_header/blob/master/src/known_protocol.ml
+const HANDSHAKE_BYTES: &[u8] = b"\x02\xfd\x52\x50\x43\x00\x01";
 
 #[derive(
     Clone, Debug, Serialize, Deserialize, PartialEq, Eq, derive_more::From, derive_more::Into,
@@ -264,6 +270,28 @@ impl<T> From<DebuggerMessage<T>> for Message<T> {
         }
     }
 }
+
+#[derive(Debug, Clone, derive_more::From, derive_more::Into)]
+pub struct RpcRawBytes(Vec<u8>);
+
+impl BinProtRead for RpcRawBytes {
+    fn binprot_read<R: io::Read + ?Sized>(r: &mut R) -> Result<Self, binprot::Error>
+    where
+        Self: Sized,
+    {
+        let mut bytes = Vec::new();
+        r.read_to_end(&mut bytes)?;
+        Ok(bytes.into())
+    }
+}
+
+impl BinProtWrite for RpcRawBytes {
+    fn binprot_write<W: io::Write>(&self, w: &mut W) -> std::io::Result<()> {
+        w.write_all(&self.0)
+    }
+}
+
+type RawMessage = Message<RpcRawBytes>;
 
 #[derive(Clone, Debug, Serialize, Deserialize, BinProtRead, BinProtWrite, PartialEq, Eq)]
 pub struct QueryHeader {
