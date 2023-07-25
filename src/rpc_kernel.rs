@@ -126,6 +126,20 @@ pub enum Error {
     Unknown_query_id(QueryID),
 }
 
+impl From<std::io::Error> for Error {
+    fn from(source: std::io::Error) -> Self {
+        Error::Bin_io_exn
+    }
+}
+
+impl From<binprot::Error> for Error {
+    fn from(source: binprot::Error) -> Self {
+        Error::Bin_io_exn
+    }
+}
+
+
+
 /// Type used for encoding RPC query payload.
 ///
 /// Effectively this is the bin_prot encoding of the data prepended with `Nat0`

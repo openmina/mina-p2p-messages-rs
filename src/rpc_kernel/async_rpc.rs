@@ -99,7 +99,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin + ?Sized> RpcAsyncStreamExt for S {}
 
 pub trait RpcHandler {
     fn handle(
-        &self,
+        self,
         tag: Tag,
         version: Ver,
         data: Vec<u8>,
@@ -120,7 +120,7 @@ pub enum AsyncRpcError {
     IO(#[from] io::Error),
 }
 
-pub async fn serve_query<S, H>(stream: &mut S, handler: &H) -> Result<(), AsyncRpcError>
+pub async fn serve_query<S, H>(mut stream: S, handler: H) -> Result<(), AsyncRpcError>
 where
     S: RpcAsyncReadExt + RpcAsyncWriteExt + Send + Unpin,
     H: RpcHandler,
