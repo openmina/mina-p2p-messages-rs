@@ -158,6 +158,7 @@ pub enum MinaLedgerSyncLedgerQueryStableV1 {
     WhatChildHashes(MerkleAddressBinableArgStableV1),
     WhatContents(MerkleAddressBinableArgStableV1),
     NumAccounts,
+    WhatAccountWithPath(NonZeroCurvePoint, TokenIdKeyHash),
 }
 
 /// **OCaml name**: `Mina_ledger__Sync_ledger.Answer.Stable.V2`
@@ -174,6 +175,7 @@ pub enum MinaLedgerSyncLedgerAnswerStableV2 {
     ChildHashesAre(LedgerHash, LedgerHash),
     ContentsAre(Vec<MinaBaseAccountBinableArgStableV2>),
     NumAccounts(crate::number::Int64, LedgerHash),
+    AccountWithPath(Option<(MinaBaseAccountBinableArgStableV2, super::MerkleTreePath)>),
 }
 
 /// **OCaml name**: `Consensus__Proof_of_stake.Make_str.Data.Consensus_state.Value.Stable.V2`
