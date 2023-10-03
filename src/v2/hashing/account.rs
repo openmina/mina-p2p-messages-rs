@@ -157,7 +157,7 @@ impl Default for MinaBaseZkappAccountStableV2 {
             verification_key: Default::default(),
             zkapp_version: Default::default(),
             action_state: {
-                let empty: BigInt = hash_noinputs("MinaZkappSequenceStateEmptyElt").into();
+                let empty: BigInt = hash_noinputs("MinaZkappAccount").into();
                 let sequence_state: [_; 5] = array::from_fn(|_| empty.clone());
                 PaddedSeq(sequence_state)
             },

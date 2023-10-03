@@ -390,7 +390,7 @@ const NO_INPUT_PARAMS: &[u8; 32] = &[0; 32];
 
 fn param_to_field(param: &str, pad: &[u8; 32]) -> Fp {
     if param.len() > 20 {
-        panic!("must be 20 byte maximum");
+        panic!("must be 20 byte maximum, but got: {param}");
     }
 
     param_to_field_impl(param, pad)
