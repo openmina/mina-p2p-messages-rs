@@ -2,8 +2,11 @@
 use std::{fmt, io};
 
 use ark_ff::FromBytes;
-use binprot::BinProtWrite;
-use generated::MinaStateBlockchainStateValueStableV2;
+use binprot::{BinProtRead, BinProtWrite};
+use generated::{
+    MinaBaseControlStableV2, MinaBaseZkappCommandTStableV1WireStableV1AccountUpdatesAACallsA,
+    MinaStateBlockchainStateValueStableV2,
+};
 use mina_hasher::Fp;
 use mina_poseidon::{
     constants::PlonkSpongeConstantsKimchi,
@@ -39,7 +42,8 @@ use super::{
     MinaStateBlockchainStateValueStableV2SignedAmount, MinaStateProtocolStateBodyValueStableV2,
     MinaStateProtocolStateValueStableV2,
     MinaTransactionLogicZkappCommandLogicLocalStateValueStableV1,
-    NonZeroCurvePointUncompressedStableV1, SgnStableV1, SignedAmount, StateHash, TokenFeeExcess,
+    NonZeroCurvePointUncompressedStableV1, PicklesProofProofsVerifiedMaxStableV2, SgnStableV1,
+    SignedAmount, StateHash, TokenFeeExcess,
 };
 
 impl generated::MinaBaseStagedLedgerHashNonSnarkStableV1 {
@@ -145,22 +149,34 @@ impl generated::MinaBaseUserCommandStableV2 {
     pub fn hash(&self) -> io::Result<TransactionHash> {
         match self {
             Self::SignedCommand(v) => v.hash(),
-            Self::ZkappCommand(_) => Err(io::Error::new(
-                io::ErrorKind::Unsupported,
-                "zkapp tx hashing is not yet supported",
-            )),
+            Self::ZkappCommand(v) => v.hash(),
         }
     }
 }
 
+fn dummy_signature() -> generated::MinaBaseSignatureStableV1 {
+    generated::MinaBaseSignatureStableV1(BigInt::one(), BigInt::one())
+}
+
+fn dummy_proof() -> Box<PicklesProofProofsVerifiedMaxStableV2> {
+    lazy_static::lazy_static! {
+        static ref DUMMY_PROOF: Box<PicklesProofProofsVerifiedMaxStableV2> = {
+            let bytes = include_bytes!("dummy_transaction_proof.bin");
+            PicklesProofProofsVerifiedMaxStableV2::binprot_read(&mut bytes.as_slice())
+                .unwrap()
+                .into()
+        };
+    }
+
+    DUMMY_PROOF.clone()
+}
+
 impl generated::MinaBaseSignedCommandStableV2 {
     pub fn binprot_write_with_default_sig(&self) -> io::Result<Vec<u8>> {
-        let default_signature = generated::MinaBaseSignatureStableV1(BigInt::one(), BigInt::one());
-
         let mut encoded = vec![];
         self.payload.binprot_write(&mut encoded)?;
         self.signer.binprot_write(&mut encoded)?;
-        default_signature.binprot_write(&mut encoded)?;
+        dummy_signature().binprot_write(&mut encoded)?;
         Ok(encoded)
     }
 
@@ -172,6 +188,57 @@ impl generated::MinaBaseSignedCommandStableV2 {
         let mut hasher = Blake2bVar::new(32).expect("Invalid Blake2bVar output size");
 
         hasher.update(&self.binprot_write_with_default_sig()?);
+        let mut hash = vec![0; 33];
+        hash[..1].copy_from_slice(&[32]);
+        hash[1..].copy_from_slice(&hasher.finalize_boxed());
+
+        Ok(TransactionHash(hash))
+    }
+}
+
+impl generated::MinaBaseZkappCommandTStableV1WireStableV1 {
+    pub fn binprot_write_with_default_sigs_and_proofs(&self) -> io::Result<Vec<u8>> {
+        // TODO: maybe avoid cloning
+        let mut data = self.clone();
+        data.fee_payer.authorization = dummy_signature().into();
+
+        fn replace_calls(
+            call: &mut MinaBaseZkappCommandTStableV1WireStableV1AccountUpdatesAACallsA,
+        ) {
+            match &mut call.elt.account_update.authorization {
+                MinaBaseControlStableV2::NoneGiven => {}
+                MinaBaseControlStableV2::Signature(v) => *v = dummy_signature().into(),
+                MinaBaseControlStableV2::Proof(v) => *v = dummy_proof(),
+            };
+
+            for call in &mut call.elt.calls {
+                replace_calls(call);
+            }
+        }
+
+        for update in &mut data.account_updates {
+            match &mut update.elt.account_update.authorization {
+                MinaBaseControlStableV2::NoneGiven => {}
+                MinaBaseControlStableV2::Signature(v) => *v = dummy_signature().into(),
+                MinaBaseControlStableV2::Proof(v) => *v = dummy_proof(),
+            };
+            for call in &mut update.elt.calls {
+                replace_calls(call);
+            }
+        }
+        let mut encoded = vec![];
+        data.binprot_write(&mut encoded)?;
+        Ok(encoded)
+    }
+
+    pub fn hash(&self) -> io::Result<TransactionHash> {
+        use blake2::{
+            digest::{Update, VariableOutput},
+            Blake2bVar,
+        };
+        let mut hasher = Blake2bVar::new(32).expect("Invalid Blake2bVar output size");
+
+        hasher.update(&self.binprot_write_with_default_sigs_and_proofs()?);
         let mut hash = vec![0; 33];
         hash[..1].copy_from_slice(&[32]);
         hash[1..].copy_from_slice(&hasher.finalize_boxed());
