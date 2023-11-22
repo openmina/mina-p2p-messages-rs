@@ -10,8 +10,8 @@ use crate::{
 
 use super::{
     ConsensusProofOfStakeDataConsensusStateValueStableV2, ConsensusVrfOutputTruncatedStableV1,
-    CurrencyAmountStableV1, DataHashLibStateHashStableV1, MinaBaseAccountIdDigestStableV1,
-    MinaBaseEpochSeedStableV1, MinaBaseLedgerHash0StableV1,
+    CurrencyAmountStableV1, DataHashLibStateHashStableV1, LimbVectorConstantHex64StableV1,
+    MinaBaseAccountIdDigestStableV1, MinaBaseEpochSeedStableV1, MinaBaseLedgerHash0StableV1,
     MinaBasePendingCoinbaseCoinbaseStackStableV1, MinaBasePendingCoinbaseHashVersionedStableV1,
     MinaBasePendingCoinbaseStackHashStableV1, MinaBaseSignatureStableV1,
     MinaBaseStateBodyHashStableV1, NonZeroCurvePointUncompressedStableV1,
@@ -823,6 +823,41 @@ impl std::fmt::Debug for super::UnsignedExtendedUInt64Int64ForVersionTagsStableV
             "UnsignedExtendedUInt64Int64ForVersionTagsStableV1({:?})",
             inner
         ))
+    }
+}
+
+impl Serialize for LimbVectorConstantHex64StableV1 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if serializer.is_human_readable() {
+            hex::encode(self.0 .0.to_be_bytes()).serialize(serializer)
+        } else {
+            self.0.serialize(serializer)
+        }
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for LimbVectorConstantHex64StableV1 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        if deserializer.is_human_readable() {
+            let s: String = Deserialize::deserialize(deserializer)?;
+            hex::decode(s)
+                .map_err(serde::de::Error::custom)
+                .and_then(|bytes| {
+                    bytes
+                        .try_into()
+                        .map_err(|_| serde::de::Error::custom("expected 8 bytes"))
+                })
+                .map(|bytes| i64::from_be_bytes(bytes))
+                .map(|v| LimbVectorConstantHex64StableV1(v.into()))
+        } else {
+            Deserialize::deserialize(deserializer).map(Self)
+        }
     }
 }
 

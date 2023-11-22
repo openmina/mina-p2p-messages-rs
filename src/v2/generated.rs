@@ -534,7 +534,7 @@ pub enum PicklesBaseProofsVerifiedStableV1 {
 ///
 /// Gid: `125`
 /// Location: [src/int64.ml:6:6](https://github.com/MinaProtocol/mina/blob/14047c5551/src/int64.ml#L6)
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, BinProtRead, BinProtWrite, Deref)]
+#[derive(Clone, Debug, PartialEq, BinProtRead, BinProtWrite, Deref)]
 pub struct LimbVectorConstantHex64StableV1(pub crate::number::Int64);
 
 /// **OCaml name**: `Composition_types__Branch_data.Make_str.Domain_log2.Stable.V1`
